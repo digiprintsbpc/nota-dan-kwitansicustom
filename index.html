@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DIGIPRINT | Lacak & Login</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f172a">
+<link rel="apple-touch-icon" href="https://via.placeholder.com/192/38bdf8/0f172a?text=DP">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+  
+  /* --- BACKGROUND & ANIMASI GELEMBUNG --- */
+  body { 
+    background: linear-gradient(135deg, #020617 0%, #0f172a 100%); 
+    color: white; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    min-height: 100vh; 
+    padding: 20px; 
+    overflow-x: hidden; 
+    position: relative;
+  }
+
+  .bg-bubbles {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; pointer-events: none;
+  }
+  .bubble {
+    position: absolute; bottom: -100px; background: rgba(56, 189, 248, 0.15); border-radius: 50%;
+    animation: floatUp linear infinite; backdrop-filter: blur(3px);
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(0) scale(1) translateX(0); opacity: 1; }
+    50% { transform: translateY(-50vh) scale(1.2) translateX(20px); opacity: 0.8; }
+    100% { transform: translateY(-120vh) scale(1.5) translateX(-20px); opacity: 0; }
+  }
+  /* Mengatur ukuran dan kecepatan gelembung */
+  .bubble:nth-child(1) { left: 10%; width: 40px; height: 40px; animation-duration: 8s; animation-delay: 0s; }
+  .bubble:nth-child(2) { left: 30%; width: 60px; height: 60px; animation-duration: 12s; animation-delay: 2s; }
+  .bubble:nth-child(3) { left: 70%; width: 30px; height: 30px; animation-duration: 10s; animation-delay: 4s; }
+  .bubble:nth-child(4) { left: 85%; width: 80px; height: 80px; animation-duration: 15s; animation-delay: 1s; }
+  .bubble:nth-child(5) { left: 50%; width: 50px; height: 50px; animation-duration: 11s; animation-delay: 5s; }
+  .bubble:nth-child(6) { left: 20%; width: 70px; height: 70px; animation-duration: 14s; animation-delay: 7s; }
+
+  /* --- TOAST NOTIFICATION --- */
+  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%) translateY(-100px); background: rgba(16, 185, 129, 0.95); color: white; padding: 12px 25px; border-radius: 30px; font-weight: 600; font-size: 13px; z-index: 3000; transition: 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); opacity: 0; box-shadow: 0 10px 25px rgba(0,0,0,0.4); text-align: center; width: max-content; max-width: 90%; backdrop-filter: blur(10px);}
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .toast.error { background: rgba(239, 68, 68, 0.95); }
+
+  /* --- KOTAK UTAMA (PREMIUM GLASSMORPHISM) --- */
+  .main-container { 
+    background: rgba(30, 41, 59, 0.65); 
+    backdrop-filter: blur(16px); 
+    -webkit-backdrop-filter: blur(16px);
+    padding: 35px 30px; 
+    border-radius: 24px; 
+    width: 100%; 
+    max-width: 400px; 
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1); 
+    border: 1px solid rgba(255, 255, 255, 0.08); 
+    position: relative; 
+    z-index: 10; 
+    overflow: hidden; 
+    animation: fadeInUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .header-text { text-align: center; margin-bottom: 30px; }
+  .header-text h1 { color: #38bdf8; font-size: 28px; font-weight: 800; letter-spacing: 1px; margin-bottom: 5px; text-shadow: 0 2px 10px rgba(56,189,248,0.3);}
+  .header-text p { font-size: 13px; color: #cbd5e1; }
+  
+  .input-box { margin-bottom: 18px; text-align: left; }
+  .input-box label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 8px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;}
+  .input-box input { width: 100%; padding: 15px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; outline: none; font-size: 14px; transition: all 0.3s ease;}
+  .input-box input:focus { border-color: #38bdf8; background: rgba(15, 23, 42, 0.8); box-shadow: 0 0 15px rgba(56,189,248,0.2); }
+  
+  /* Hilangkan panah spinner pada input number */
+  input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type="number"] { -moz-appearance: textfield; }
+
+  /* Tombol Premium */
+  .btn-primary { width: 100%; padding: 15px; background: linear-gradient(135deg, #2563eb, #3b82f6); border: none; border-radius: 12px; color: white; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s ease; margin-top: 5px; box-shadow: 0 8px 20px rgba(37,99,235,0.3); letter-spacing: 0.5px;}
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(37,99,235,0.4); filter: brightness(1.1);}
+  .btn-primary:active { transform: scale(0.96); box-shadow: 0 4px 10px rgba(37,99,235,0.3); }
+  
+  .btn-secondary { width: 100%; padding: 15px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 12px; color: white; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 8px 20px rgba(16,185,129,0.3); letter-spacing: 0.5px;}
+  .btn-secondary:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(16,185,129,0.4); filter: brightness(1.1);}
+  .btn-secondary:active { transform: scale(0.96); box-shadow: 0 4px 10px rgba(16,185,129,0.3); }
+  
+  .btn-text { background: transparent; border: none; color: #94a3b8; font-size: 13px; cursor: pointer; margin-top: 25px; width: 100%; font-weight: 500; transition: 0.3s;}
+  .btn-text:hover { color: #38bdf8; }
+  .btn-text:active { transform: scale(0.95); }
+
+  .divider { display: flex; align-items: center; text-align: center; margin: 30px 0; color: #64748b; font-size: 12px; }
+  .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px dashed rgba(255,255,255,0.1); }
+  .divider:not(:empty)::before { margin-right: 1em; }
+  .divider:not(:empty)::after { margin-left: 1em; }
+
+  /* Tab Group Eksklusif */
+  .tab-group { display: flex; gap: 5px; margin-bottom: 25px; background: rgba(15, 23, 42, 0.6); padding: 6px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.05);}
+  .tab-btn { flex: 1; padding: 12px; border: none; background: transparent; color: #94a3b8; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.3s ease; }
+  .tab-btn.active { background: linear-gradient(135deg, #2563eb, #3b82f6); color: white; box-shadow: 0 4px 15px rgba(37,99,235,0.4); }
+
+  .lacak-result { margin-top: 20px; text-align: left; max-height: 350px; overflow-y: auto; padding-right: 5px; animation: fadeIn 0.4s ease; }
+  .status-badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; text-transform: uppercase; margin-left: 5px; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+  .card-result { background: rgba(15, 23, 42, 0.8); padding: 18px; border-radius: 14px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); border-left: 4px solid #38bdf8; font-size: 13px; line-height: 1.6;}
+  
+  .fade-in { animation: fadeIn 0.4s ease-in-out; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; overflow-y: auto; }
+  .struk-btn-action { flex: 1; padding: 12px 5px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; gap: 5px; transition: 0.3s; }
+  .struk-btn-action:hover { filter: brightness(1.1); transform: translateY(-2px); }
+  .struk-btn-action:active { transform: scale(0.95); }
+  .btn-unduh { background: white; color: #333; }
+  .btn-cetak { background: linear-gradient(135deg, #4f46e5, #4338ca); color: white; }
+  .btn-tutup { background: #fecdd3; color: #ef4444; }
+
+  @media print {
+    body > *:not(#strukModal) { display: none !important; }
+    #strukModal { display: block !important; position: static; background: transparent; padding: 0; }
+    #areaStruk { display: block !important; position: static; width: 100%; max-width: 300px; margin: 0; padding: 0; box-shadow: none; border: none; }
+    .struk-btn-action { display: none !important; }
+  }
+
+  .lacak-result::-webkit-scrollbar { width: 6px; }
+  .lacak-result::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<div class="bg-bubbles">
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+  <div class="bubble"></div>
+</div>
+
+<div id="toast" class="toast">Pesan Notifikasi</div>
+
+<div class="main-container">
+  
+  <div id="view-tracking" class="fade-in">
+    <div class="header-text">
+      <h1>TRAZO.</h1>
+      <p>Lacak pesanan Anda tanpa perlu masuk</p>
+    </div>
+
+    <div class="input-box">
+      <input type="number" id="idPesananInput" placeholder="Masukkan Nomor WhatsApp (08...)">
+    </div>
+    <button class="btn-primary" onclick="lacakStatusPesanan()">🔍 Lacak Pesanan</button>
+    
+    <div id="lacakResultBox" class="lacak-result" style="display:none;"></div>
+
+    <div class="divider">ATAU</div>
+
+    <p style="text-align: center; font-size: 13px; color: #cbd5e1; margin-bottom: 12px;">Ingin membuat pesanan baru?</p>
+    <button class="btn-secondary" onclick="toggleView('auth')">Daftar / Login untuk Pesan</button>
+  </div>
+
+  <div id="view-auth" style="display: none;" class="fade-in">
+    <div class="header-text">
+      <h1>Portal Akun</h1>
+      <p>Masuk atau daftar untuk mulai memesan</p>
+    </div>
+
+    <div class="tab-group">
+      <button class="tab-btn active" onclick="switchTab('login')" id="btnTabLogin">Login</button>
+      <button class="tab-btn" onclick="switchTab('register')" id="btnTabRegister">Daftar</button>
+    </div>
+
+    <div id="formLogin" class="fade-in">
+      <div class="input-box"><label>Nomor WhatsApp</label><input type="number" id="logWa" placeholder="Contoh: 08123456..."></div>
+      <div class="input-box"><label>PIN Rahasia</label><input type="password" id="logPin" placeholder="Masukkan 6 Digit PIN"></div>
+      <div style="text-align: right; margin-bottom: 15px;">
+        <a href="#" onclick="lupaPin()" style="color: #38bdf8; font-size: 12px; text-decoration: none; font-weight: 500; transition: 0.3s;">Lupa PIN?</a>
+      </div>
+      <button class="btn-primary" id="btnLogin" onclick="prosesLogin()">Masuk Sekarang</button>
+    </div>
+
+    <div id="formRegister" style="display: none;" class="fade-in">
+      <div class="input-box"><label>Nama Lengkap / Toko</label><input type="text" id="regNama" placeholder="Nama Anda"></div>
+      <div class="input-box"><label>Nomor WhatsApp</label><input type="number" id="regWa" placeholder="Wajib diawali 08..."></div>
+      <div class="input-box"><label>Buat PIN</label><input type="password" id="regPin" placeholder="Buat PIN persis 6 Digit Angka"></div>
+      <button class="btn-primary" id="btnRegister" onclick="prosesDaftar()">Buat Akun Baru</button>
+    </div>
+
+    <button class="btn-text" onclick="toggleView('tracking')">⬅ Kembali Lacak Pesanan</button>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="strukModal">
+  <div style="display:flex; flex-direction:column; align-items:center; gap:15px; width:100%; max-width:350px; margin:auto;">
+    <div id="areaStruk" style="background: white; color: black; padding: 20px; border: 1px solid #ccc; width: 100%; font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.4; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border-radius: 8px;">
+      <div style="text-align: center; font-weight: bold; font-size: 16px; margin-bottom: 5px;">Digiprint Sbpc.</div>
+      <div style="text-align: center; margin-bottom: 10px; font-size: 12px;">Jl. Arah Kebonklopo RT23 RW 06 Desa<br>Jatiguwi, Sumberpucung<br>083143152613</div>
+      
+      <div style="border-top: 1px dashed black; margin-bottom: 10px;"></div>
+      <div style="margin-bottom: 10px; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
+        <div style="display: flex;"><div style="width: 40px;">No</div><div>: <span id="strukNo"></span></div></div>
+        <div style="display: flex;"><div style="width: 40px;">Tgl</div><div>: <span id="strukTgl"></span></div></div>
+      </div>
+      <div style="border-top: 1px dashed black; margin-bottom: 10px;"></div>
+      
+      <div id="strukItem" style="margin-bottom: 10px; font-size: 12px; display: flex; flex-direction: column; gap: 2px;"></div>
+      
+      <div style="border-top: 1px dashed black; margin-bottom: 10px;"></div>
+      <div style="font-weight: bold; font-size: 14px; display: flex; flex-direction: column; gap: 4px;">
+        <div style="display: flex; justify-content: space-between;"><div style="width: 70px;">TOTAL</div><div id="strukTotal"></div></div>
+        <div style="display: flex; justify-content: space-between;"><div style="width: 70px;">BAYAR</div><div id="strukBayar"></div></div>
+        <div style="display: flex; justify-content: space-between;"><div style="width: 70px;">KEMBALI</div><div>Rp 0</div></div>
+      </div>
+      <div style="margin-top: 25px; text-align: center; font-size: 12px;">Terima Kasih Atas Kunjungan Anda</div>
+    </div>
+
+    <div style="display:flex; gap:10px; width:100%;">
+      <button onclick="unduhStruk()" class="struk-btn-action btn-unduh">📷 Simpan Gambar</button>
+      <button onclick="cetakStruk()" class="struk-btn-action btn-cetak">🖨️ Cetak Struk</button>
+      <button onclick="tutupStruk()" class="struk-btn-action btn-tutup">Tutup</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const LINK_API = "https://script.google.com/macros/s/AKfycbz2-BzarVS23Bz6qKHxxz_9NjOBPSk1AodoUHvN54dTeILb6ryVOspKfHHZpYYMSr7x/exec";
+  let globalProdukTracker = [];
+
+  function showToast(msg, isError = false) {
+    const toast = document.getElementById('toast');
+    toast.innerText = msg;
+    toast.className = isError ? 'toast show error' : 'toast show';
+    setTimeout(() => { toast.classList.remove('show'); }, 3000);
+  }
+
+  // --- FUNGSI VALIDASI INPUT (WA & PIN) ---
+  function validasiInput(wa, pin) {
+    const waStr = wa.toString().trim();
+    const pinStr = pin.toString().trim();
+
+    // Validasi awalan 62 atau +62
+    if (waStr.startsWith("62") || waStr.startsWith("+62")) {
+      showToast("Nomor WhatsApp harus pakai awalan 08, jangan 62 atau +62!", true);
+      return false;
+    }
+    // Validasi wajib awalan 08
+    if (!waStr.startsWith("08")) {
+      showToast("Format salah! Nomor WhatsApp wajib diawali angka 08.", true);
+      return false;
+    }
+    // Validasi panjang PIN (Harus tepat 6 angka)
+    if (pinStr.length !== 6) {
+      showToast("Gagal! PIN harus terdiri dari persis 6 digit angka.", true);
+      return false;
+    }
+    
+    return true;
+  }
+
+  window.onload = async function() {
+    try {
+      const res = await fetch(LINK_API, { method: "POST", body: JSON.stringify({action: "get_produk"}) });
+      const data = await res.json();
+      if(data.result === "success") globalProdukTracker = data.data;
+    } catch(e) {}
+
+    // --- FITUR BARU: Enter untuk pindah kolom / Login ---
+    document.getElementById('logWa').addEventListener('keypress', function(e) {
+      if(e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('logPin').focus(); // Pindah ke kolom PIN
+      }
+    });
+    
+    document.getElementById('logPin').addEventListener('keypress', function(e) {
+      if(e.key === 'Enter') {
+        e.preventDefault();
+        prosesLogin(); // Langsung proses login
+      }
+    });
+  };
+
+  function toggleView(viewName) {
+    const viewTrack = document.getElementById('view-tracking');
+    const viewAuth = document.getElementById('view-auth');
+    
+    if(viewName === 'tracking') {
+      viewAuth.style.display = 'none';
+      viewTrack.style.display = 'block';
+    } else {
+      viewTrack.style.display = 'none';
+      viewAuth.style.display = 'block';
+      document.getElementById('lacakResultBox').style.display = 'none';
+      document.getElementById('lacakResultBox').innerHTML = '';
+    }
+  }
+
+  function switchTab(tab) {
+    const formLog = document.getElementById('formLogin');
+    const formReg = document.getElementById('formRegister');
+    
+    if(tab === 'login') {
+      formReg.style.display = 'none';
+      formLog.style.display = 'block';
+    } else {
+      formLog.style.display = 'none';
+      formReg.style.display = 'block';
+    }
+    
+    document.getElementById('btnTabLogin').classList.toggle('active', tab === 'login');
+    document.getElementById('btnTabRegister').classList.toggle('active', tab === 'register');
+  }
+
+  async function prosesLogin() {
+    const wa = document.getElementById('logWa').value; 
+    const pin = document.getElementById('logPin').value;
+    
+    if(!wa || !pin) {
+      showToast("Tolong isi Nomor WhatsApp dan PIN Anda!", true);
+      return;
+    }
+
+    if(!validasiInput(wa, pin)) return;
+    
+    const btn = document.getElementById('btnLogin'); 
+    btn.innerText = "⏳ Memeriksa Data..."; 
+    btn.disabled = true;
+    
+    try {
+      const res = await fetch(LINK_API, { method: "POST", body: JSON.stringify({action: "login", wa: wa, pin: pin}) });
+      const data = await res.json();
+      
+      if(data.result === "success") {
+        localStorage.setItem("role", data.role); 
+        localStorage.setItem("nama", data.nama); 
+        localStorage.setItem("wa", wa);
+        
+        // TAMBAHAN: Simpan Poin dari Database ke Memori Lokal
+        localStorage.setItem("poin", data.poin || 0); 
+        
+        showToast("✅ Login Berhasil! Mengalihkan...");
+        setTimeout(() => {
+          window.location.href = data.role === "admin" ? "admin.html" : "customer.html";
+        }, 1200);
+      } else { 
+        showToast(data.message, true); 
+      }
+    } catch(e) { 
+      showToast("Gagal koneksi server! Coba lagi.", true); 
+    }
+    
+    btn.innerText = "Masuk Sekarang"; 
+    btn.disabled = false;
+  }
+
+  async function prosesDaftar() {
+    const nama = document.getElementById('regNama').value; 
+    const wa = document.getElementById('regWa').value; 
+    const pin = document.getElementById('regPin').value;
+    
+    if(!nama || !wa || !pin) {
+      showToast("Lengkapi semua kolom pendaftaran!", true);
+      return;
+    }
+
+    // Jalankan pengecekan validasi
+    if(!validasiInput(wa, pin)) return;
+
+    const btn = document.getElementById('btnRegister'); 
+    btn.innerText = "⏳ Mendaftarkan Akun..."; 
+    btn.disabled = true;
+    
+    try {
+      const res = await fetch(LINK_API, { method: "POST", body: JSON.stringify({action: "register", nama: nama, wa: wa, pin: pin}) });
+      const data = await res.json();
+      
+      if(data.result === "success") {
+        showToast("✅ Berhasil Mendaftar! Silakan Login.");
+        switchTab('login'); 
+        document.getElementById('logWa').value = wa; 
+        document.getElementById('logPin').value = "";
+      } else { 
+        showToast(data.message, true); 
+      }
+    } catch(e) { 
+      showToast("Gagal koneksi server! Coba lagi.", true); 
+    }
+    
+    btn.innerText = "Buat Akun Baru"; 
+    btn.disabled = false;
+  }
+
+  async function lupaPin() {
+    const wa = document.getElementById('logWa').value;
+    if(!wa) {
+      showToast("Masukkan Nomor WA Anda di form sebelum klik Lupa PIN!", true);
+      return;
+    }
+    
+    if(confirm("Apakah Anda yakin ingin mereset PIN untuk nomor " + wa + "?")) {
+      document.getElementById('btnLogin').innerText = "⏳ Memproses...";
+      try {
+        const res = await fetch(LINK_API, { method: "POST", body: JSON.stringify({action: "forgot_pin", wa: wa}) });
+        const data = await res.json();
+        if(data.result === "success") {
+          showToast("✅ PIN baru telah direset menjadi: 123456.");
+        } else {
+          showToast("❌ Nomor WA tidak terdaftar.", true);
+        }
+      } catch(e) {
+        showToast("Gagal koneksi server!", true);
+      }
+      document.getElementById('btnLogin').innerText = "Masuk Sekarang";
+    }
+  }
+
+  function formatTanggalStruk(dateString) {
+    if (!dateString) return "-";
+    const d = new Date(dateString);
+    if(isNaN(d.getTime())) return dateString; 
+    const pad = (n) => n.toString().padStart(2, '0');
+    return `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()}, ${pad(d.getHours())}.${pad(d.getMinutes())}.${pad(d.getSeconds())}`;
+  }
+
+  function getHargaFromMenu(namaPencarian) {
+    const nameLower = namaPencarian.trim().toLowerCase();
+    const found = globalProdukTracker.find(m => m.nama.trim().toLowerCase() === nameLower);
+    return found ? found.harga : 0;
+  }
+
+  function tutupStatusPesanan() {
+    const resultBox = document.getElementById('lacakResultBox');
+    resultBox.style.display = "none"; resultBox.innerHTML = "";
+    document.getElementById('idPesananInput').value = ""; 
+  }
+
+  // --- FUNGSI LACAK PESANAN ---
+  async function lacakStatusPesanan() {
+    const idInput = document.getElementById('idPesananInput').value;
+    if (!idInput) {
+      showToast("Tolong masukkan Nomor WhatsApp atau Resi Pesanan!", true);
+      return;
+    }
+
+    const btn = document.querySelector('#view-tracking .btn-primary');
+    const originalText = btn.innerText;
+    btn.innerText = "⏳ Melacak...";
+    btn.disabled = true;
+    
+    const resultBox = document.getElementById('lacakResultBox');
+    resultBox.style.display = "none";
+    
+    try {
+      // Memanggil endpoint GET di Apps Script
+      const res = await fetch(LINK_API + "?id=" + idInput);
+      const data = await res.json();
+      
+      if (data.result === "success") {
+        window.dataStrukAktifMap = {}; // Reset data struk
+        let htmlResult = `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h3 style="font-size:14px; color:#38bdf8;">Hasil Pelacakan</h3>
+            <button onclick="tutupStatusPesanan()" style="background:rgba(239,68,68,0.2); border:none; color:#ef4444; padding:4px 8px; border-radius:6px; cursor:pointer; font-size:11px;">Tutup ✖</button>
+          </div>
+        `;
+
+        data.data.forEach(order => {
+          let statusColor = order.status.toLowerCase().includes("selesai") ? "#10b981" : 
+                           (order.status.toLowerCase().includes("batal") ? "#ef4444" : "#f59e0b");
+          
+          let totalBayar = parseInt(order.total_bayar) || 0;
+          let totalRp = "Rp " + totalBayar.toLocaleString('id-ID');
+          let idTrxAsli = order.id_trx;
+
+          // Buat rincian item untuk struk
+          let strukItemsHTML = "";
+          if (order.detail_pesanan) {
+              let itemsArr = order.detail_pesanan.split('|').map(s => s.trim());
+              itemsArr.forEach(itemStr => {
+                  strukItemsHTML += `<div style="margin-bottom: 2px;">• ${itemStr}</div>`;
+              });
+          }
+
+          htmlResult += `
+            <div class="card-result">
+                <div style="margin-bottom: 8px; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 8px;">
+                  <span style="font-weight:bold; color:#38bdf8; font-size:14px;">${idTrxAsli}</span><br>
+                  <span style="font-size:11px; color:#94a3b8;">${formatTanggalStruk(order.tanggal)}</span>
+                </div>
+                👤 <b style="color:#e2e8f0;">Penerima:</b> ${order.nama_penerima || "-"}<br>
+                📦 <b style="color:#e2e8f0;">Pesanan:</b> ${order.detail_pesanan || "-"}<br>
+                🔄 <b style="color:#e2e8f0;">Status:</b> <span class="status-badge" style="background:${statusColor};">${order.status || "-"}</span>
+          `;
+
+          // Tampilkan Link Lacak jika ada dari database
+          if (order.link_lacak && order.link_lacak !== "" && order.link_lacak !== "-") {
+              htmlResult += `<br>🔗 <b style="color:#e2e8f0;">Lacak Pengiriman:</b> <a href="${order.link_lacak}" target="_blank" style="color:#38bdf8; text-decoration:none; font-weight:600;">🌐 Buka Tautan</a>`;
+          }
+
+          // Tombol struk hanya muncul jika status bukan menunggu
+          if (!order.status.toLowerCase().includes("menunggu")) {
+            window.dataStrukAktifMap[idTrxAsli] = {
+              no: "TRX-" + idTrxAsli, 
+              tgl: formatTanggalStruk(order.tanggal), 
+              itemsHTML: strukItemsHTML, 
+              total: totalRp, 
+              bayar: totalRp 
+            };
+            htmlResult += `<br><br><button onclick="bukaStruk('${idTrxAsli}')" style="padding: 10px 15px; background: linear-gradient(135deg, #4f46e5, #4338ca); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 12px; cursor: pointer; width: 100%; transition: 0.3s; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);">🧾 Lihat Struk (${idTrxAsli})</button>`;
+          }
+
+          htmlResult += `</div>`;
+        });
+
+        resultBox.innerHTML = htmlResult;
+        resultBox.style.display = "block";
+      } else {
+        showToast("Pesanan tidak ditemukan. Periksa kembali nomor Anda.", true);
+      }
+    } catch(e) {
+      showToast("Gagal terhubung ke server. Coba lagi nanti.", true);
+    }
+    
+    btn.innerText = originalText;
+    btn.disabled = false;
+  }
+
+  function bukaStruk(idTrx) {
+    if(!window.dataStrukAktifMap || !window.dataStrukAktifMap[idTrx]) return;
+    const dataStruk = window.dataStrukAktifMap[idTrx];
+
+    document.getElementById('strukNo').innerText = dataStruk.no;
+    document.getElementById('strukTgl').innerText = dataStruk.tgl;
+    document.getElementById('strukItem').innerHTML = dataStruk.itemsHTML;
+    document.getElementById('strukTotal').innerText = dataStruk.total;
+    document.getElementById('strukBayar').innerText = dataStruk.bayar;
+    
+    document.getElementById('strukModal').style.display = 'flex';
+  }
+
+  function tutupStruk() { document.getElementById('strukModal').style.display = 'none'; }
+  function cetakStruk() { window.print(); }
+  function unduhStruk() {
+    const btnUnduh = document.querySelector('.btn-unduh');
+    const tulisanAwal = btnUnduh.innerText; btnUnduh.innerText = "⏳ Memproses...";
+    
+    html2canvas(document.getElementById("areaStruk"), { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
+      let a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = "Struk_Digiprint_" + document.getElementById('strukNo').innerText + ".png";
+      a.click();
+      btnUnduh.innerText = tulisanAwal;
+    });
+  }
+</script>
+</body>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(registration => {
+          console.log('ServiceWorker sukses didaftarkan dengan scope: ', registration.scope);
+        })
+        .catch(err => {
+          console.log('ServiceWorker gagal didaftarkan: ', err);
+        });
+    });
+  }
+</script>
+</html>

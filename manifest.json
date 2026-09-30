@@ -1,0 +1,22 @@
+{
+  "name": "DIGIPRINT Sbpc.",
+  "short_name": "DIGIPRINT",
+  "description": "Layanan cetak online cepat dan mudah.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://via.placeholder.com/192/38bdf8/0f172a?text=DP",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://via.placeholder.com/512/38bdf8/0f172a?text=DP",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
